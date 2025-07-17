@@ -167,12 +167,8 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         if (mAllowUpdateSuggestion) {
             Log.i(TAG, "showHomepageWithSuggestion: " + showSuggestion);
             mAllowUpdateSuggestion = false;
-            if (Flags.homepageRevamp()) {
-                mSuggestionView.setVisibility(showSuggestion ? View.VISIBLE : View.GONE);
-            } else {
-                mSuggestionView.setVisibility(showSuggestion ? View.VISIBLE : View.GONE);
-                mTwoPaneSuggestionView.setVisibility(showSuggestion ? View.VISIBLE : View.GONE);
-            }
+            mSuggestionView.setVisibility(showSuggestion ? View.VISIBLE : View.GONE);
+            mTwoPaneSuggestionView.setVisibility(showSuggestion ? View.VISIBLE : View.GONE);
         }
 
         if (mHomepageView == null) {
@@ -258,10 +254,7 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         }
 
         setupEdgeToEdge();
-        setContentView(
-                Flags.homepageRevamp()
-                        ? R.layout.settings_homepage_container_v2
-                        : R.layout.settings_homepage_container);
+        setContentView(R.layout.settings_homepage_container);
 
         View decorView = getWindow().getDecorView();
         ViewGroup root = (ViewGroup) decorView.findViewById(android.R.id.content);
@@ -423,31 +416,20 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void initSearchBarView() {
-        if (Flags.homepageRevamp()) {
-            View toolbar = findViewById(R.id.search_action_bar);
-            FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
-                    .initSearchToolbar(this /* activity */, toolbar,
-                            SettingsEnums.SETTINGS_HOMEPAGE);
-        } else {
-            final Toolbar toolbar = findViewById(R.id.search_action_bar);
-            FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
-                    .initSearchToolbar(this /* activity */, toolbar,
-                            SettingsEnums.SETTINGS_HOMEPAGE);
+        final Toolbar toolbar = findViewById(R.id.search_action_bar);
+        FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
+                .initSearchToolbar(this /* activity */, toolbar,
+                        SettingsEnums.SETTINGS_HOMEPAGE);
 
-            if (mIsEmbeddingActivityEnabled) {
-                final Toolbar toolbarTwoPaneVersion = findViewById(R.id.search_action_bar_two_pane);
-                FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
-                        .initSearchToolbar(this /* activity */, toolbarTwoPaneVersion,
-                                SettingsEnums.SETTINGS_HOMEPAGE);
-            }
+        if (mIsEmbeddingActivityEnabled) {
+            final Toolbar toolbarTwoPaneVersion = findViewById(R.id.search_action_bar_two_pane);
+            FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
+                    .initSearchToolbar(this /* activity */, toolbarTwoPaneVersion,
+                            SettingsEnums.SETTINGS_HOMEPAGE);
         }
     }
 
     private void initAvatarView() {
-        if (Flags.homepageRevamp()) {
-            return;
-        }
-
         final ImageView avatarView = findViewById(R.id.account_avatar);
         final ImageView avatarTwoPaneView = findViewById(R.id.account_avatar_two_pane_version);
         if (AvatarViewMixin.isAvatarSupported(this)) {
@@ -473,7 +455,7 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void updateHomepageBackground() {
-        if (!Flags.homepageRevamp() && !mIsEmbeddingActivityEnabled) {
+        if (!mIsEmbeddingActivityEnabled) {
             return;
         }
 
@@ -487,10 +469,6 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         window.setStatusBarColor(color);
         // Update content background.
         findViewById(android.R.id.content).setBackgroundColor(color);
-        if (Flags.homepageRevamp()) {
-            //Update search bar background
-            findViewById(R.id.app_bar_container).setBackgroundColor(color);
-        }
     }
 
     private void showSuggestionFragment(boolean scrollNeeded) {
@@ -500,12 +478,8 @@ public class SettingsHomepageActivity extends FragmentActivity implements
             return;
         }
 
-        if (Flags.homepageRevamp()) {
-            mSuggestionView = findViewById(R.id.suggestion_content);
-        } else {
-            mSuggestionView = findViewById(R.id.suggestion_content);
-            mTwoPaneSuggestionView = findViewById(R.id.two_pane_suggestion_content);
-        }
+        mSuggestionView = findViewById(R.id.suggestion_content);
+        mTwoPaneSuggestionView = findViewById(R.id.two_pane_suggestion_content);
         mHomepageView = findViewById(R.id.settings_homepage_container);
         // Hide the homepage for preparing the suggestion. If scrolling is needed, the list views
         // should be initialized in the invisible homepage view to prevent a scroll flicker.
@@ -513,16 +487,11 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         // Schedule a timer to show the homepage and hide the suggestion on timeout.
         mHomepageView.postDelayed(() -> showHomepageWithSuggestion(false),
                 HOMEPAGE_LOADING_TIMEOUT_MS);
-        if (Flags.homepageRevamp()) {
-            showFragment(new SuggestionFragCreator(fragmentClass, true),
-                    R.id.suggestion_content);
-        } else {
-            showFragment(new SuggestionFragCreator(fragmentClass, /* isTwoPaneLayout= */ false),
-                    R.id.suggestion_content);
-            if (mIsEmbeddingActivityEnabled) {
-                showFragment(new SuggestionFragCreator(fragmentClass, /* isTwoPaneLayout= */ true),
-                        R.id.two_pane_suggestion_content);
-            }
+        showFragment(new SuggestionFragCreator(fragmentClass, /* isTwoPaneLayout= */ false),
+                R.id.suggestion_content);
+        if (mIsEmbeddingActivityEnabled) {
+            showFragment(new SuggestionFragCreator(fragmentClass, /* isTwoPaneLayout= */ true),
+                    R.id.two_pane_suggestion_content);
         }
     }
 
@@ -797,7 +766,7 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void updateHomepageAppBar() {
-        if (Flags.homepageRevamp() || !mIsEmbeddingActivityEnabled) {
+        if (!mIsEmbeddingActivityEnabled) {
             return;
         }
         updateAppBarMinHeight();
@@ -813,7 +782,7 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void updateHomepagePaddings() {
-        if (Flags.homepageRevamp() || !mIsEmbeddingActivityEnabled) {
+        if (!mIsEmbeddingActivityEnabled) {
             return;
         }
         if (mIsTwoPane) {
@@ -827,9 +796,6 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void updateAppBarMinHeight() {
-        if (Flags.homepageRevamp()) {
-            return;
-        }
         final int searchBarHeight = getResources().getDimensionPixelSize(R.dimen.search_bar_height);
         final int margin = getResources().getDimensionPixelSize(
                 mIsEmbeddingActivityEnabled && mIsTwoPane
