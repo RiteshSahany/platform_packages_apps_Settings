@@ -77,9 +77,16 @@ public class HomepagePreferenceLayoutHelper {
 
     void onBindViewHolder(PreferenceViewHolder holder) {
         mIcon = holder.findViewById(R.id.icon_frame);
+        // Only configure the icon view if it was found in the layout.
+        if (mIcon != null) {
+            setIconVisible(mIconVisible);
+            setIconPaddingStart(mIconPaddingStart);
+        }
+
         mText = holder.findViewById(R.id.text_frame);
-        setIconVisible(mIconVisible);
-        setIconPaddingStart(mIconPaddingStart);
-        setTextPaddingStart(mTextPaddingStart);
+        // Only configure the text view if it was found in the layout.
+        if (mText != null) {
+            setTextPaddingStart(mTextPaddingStart);
+        }
     }
 }
