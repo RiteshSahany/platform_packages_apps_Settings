@@ -113,6 +113,9 @@ public class SettingsHomepageActivity extends FragmentActivity implements
 
     static final int DEFAULT_HIGHLIGHT_MENU_KEY = R.string.menu_key_network;
     private static final long HOMEPAGE_LOADING_TIMEOUT_MS = 300;
+    
+    // Minimum padding to ensure search bar is always below status bar
+    private static final int MIN_STATUS_BAR_SEPARATION_DP = 8;
 
     private TopLevelSettings mMainFragment;
     private View mHomepageView;
@@ -253,8 +256,8 @@ public class SettingsHomepageActivity extends FragmentActivity implements
             return;
         }
 
-        setupEdgeToEdge();
         setContentView(R.layout.settings_homepage_container);
+        setupEdgeToEdge();
 
         View decorView = getWindow().getDecorView();
         ViewGroup root = (ViewGroup) decorView.findViewById(android.R.id.content);
@@ -407,21 +410,85 @@ public class SettingsHomepageActivity extends FragmentActivity implements
                 (v, windowInsets) -> {
                     Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()
                             | WindowInsetsCompat.Type.displayCutout());
+                    
+                    // Calculate minimum separation from status bar
+                    final float density = getResources().getDisplayMetrics().density;
+                    final int minSeparationPx = (int) (MIN_STATUS_BAR_SEPARATION_DP * density);
+                    final int effectiveTopInset = Math.max(insets.top, minSeparationPx);
+                    
                     // Apply the insets paddings to the view.
                     v.setPadding(insets.left, 0, insets.right, insets.bottom);
 
-                    // reset the top padding of search bar container to original top padding
-                    // plus insets top.
+                    // Set the top padding of search bar container with enhanced separation
                     View container = findViewById(R.id.app_bar_container);
-                    final int top_padding = getResources().getDimensionPixelSize(
-                            R.dimen.search_bar_container_top_padding);
-                    container.setPadding(container.getPaddingLeft(), top_padding + insets.top,
-                            container.getPaddingRight(), container.getPaddingBottom());
+                    if (container != null) {
+                        final int basePadding = getResources().getDimensionPixelSize(
+                                R.dimen.search_bar_container_top_padding);
+                        final int totalTopPadding = basePadding + effectiveTopInset;
+                        
+                        container.setPadding(
+                                container.getPaddingLeft(), 
+                                totalTopPadding,
+                                container.getPaddingRight(), 
+                                container.getPaddingBottom()
+                        );
+                        
+                        // Ensure the container has a minimum height to prevent overlap
+                        final int minHeight = effectiveTopInset + getResources().getDimensionPixelSize(
+                                R.dimen.search_bar_height) + basePadding;
+                        container.setMinimumHeight(minHeight);
+                        
+                        // Add elevation to ensure visual separation during scrolling
+                        container.setElevation(getResources().getDimensionPixelSize(
+                                R.dimen.search_bar_elevation));
+                    }
+                    
+                    // Ensure search bar toolbars maintain proper spacing
+                    ensureSearchBarSeparation(effectiveTopInset);
 
                     // Return CONSUMED if you don't want the window insets to keep being
                     // passed down to descendant views.
                     return WindowInsetsCompat.CONSUMED;
                 });
+    }
+    
+    /**
+     * Ensures search bar components maintain proper separation from status bar
+     */
+    private void ensureSearchBarSeparation(int topInset) {
+        // Apply consistent top margin to search action bars
+        View searchActionBar = findViewById(R.id.search_action_bar);
+        if (searchActionBar != null) {
+            ViewGroup.MarginLayoutParams params = 
+                    (ViewGroup.MarginLayoutParams) searchActionBar.getLayoutParams();
+            if (params != null) {
+                params.topMargin = Math.max(params.topMargin, topInset / 2);
+                searchActionBar.setLayoutParams(params);
+            }
+        }
+        
+        if (mIsEmbeddingActivityEnabled) {
+            View searchActionBarTwoPane = findViewById(R.id.search_action_bar_two_pane);
+            if (searchActionBarTwoPane != null) {
+                ViewGroup.MarginLayoutParams params = 
+                        (ViewGroup.MarginLayoutParams) searchActionBarTwoPane.getLayoutParams();
+                if (params != null) {
+                    params.topMargin = Math.max(params.topMargin, topInset / 2);
+                    searchActionBarTwoPane.setLayoutParams(params);
+                }
+            }
+        }
+        
+        // Ensure blur view maintains proper positioning
+        View searchBarBlur = findViewById(R.id.search_bar_blur);
+        if (searchBarBlur != null) {
+            ViewGroup.MarginLayoutParams blurParams = 
+                    (ViewGroup.MarginLayoutParams) searchBarBlur.getLayoutParams();
+            if (blurParams != null) {
+                blurParams.topMargin = Math.max(blurParams.topMargin, topInset);
+                searchBarBlur.setLayoutParams(blurParams);
+            }
+        }
     }
 
     private void initSearchBarView() {
