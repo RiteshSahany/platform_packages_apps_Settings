@@ -402,17 +402,9 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void setupEdgeToEdge() {
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content),
-                (v, windowInsets) -> {
-                    Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-                    // Apply the insets paddings to the view.
-                    v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-
-                    // Return CONSUMED if you don't want the window insets to keep being
-                    // passed down to descendant views.
-                    return WindowInsetsCompat.CONSUMED;
-                });
+        // This line is changed to 'true' to make the status bar opaque
+        // and have the system handle the layout.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
     }
 
     private void initSearchBarView() {
@@ -456,6 +448,9 @@ public class SettingsHomepageActivity extends FragmentActivity implements
 
     private void updateHomepageBackground() {
         if (!mIsEmbeddingActivityEnabled) {
+            // For a single pane device, set the background color to the default.
+            getWindow().getDecorView().setBackgroundColor(
+                Utils.getColorAttrDefaultColor(this, android.R.attr.colorBackground));
             return;
         }
 
