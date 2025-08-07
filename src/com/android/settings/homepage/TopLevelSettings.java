@@ -91,15 +91,18 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
     public static final String[] CHANGE_LAYOUT_KEYS = {
         "top_level_google",
         "dashboard_tile_pref_com.google.android.apps.wellbeing.settings.TopLevelSettingsActivity",
-        "top_level_wellbeing",
-        "dashboard_tile_pref_com.google.android.gms.backup.component.BackupOrRestoreSettingsActivity",        
+        "top_level_wellbeing"
+    };
+
+    // Separate array for backup tile to control its order specifically
+    public static final String[] BACKUP_TILE_KEYS = {
+        "dashboard_tile_pref_com.google.android.gms.backup.component.BackupOrRestoreSettingsActivity"
     };
 
     public static final int[] LAYOUTS_N = {
         R.layout.clover_card_google,
         R.layout.clover_card_wellbeing,
-        R.layout.clover_card_wellbeing,
-        R.layout.clover_card_backup
+        R.layout.clover_card_wellbeing
     };
 
     public TopLevelSettings() {
@@ -242,17 +245,46 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         super.onCreatePreferences(savedInstanceState, rootKey);
+        applyPreferenceCustomizations();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reapply customizations after returning from sub-settings to ensure
+        // dynamic preferences maintain their correct order and layout
+        applyPreferenceCustomizations();
+    }
+
+    /**
+     * Apply custom layout and order settings to preferences.
+     * This needs to be called both during initial creation and after navigation
+     * to handle dynamic preference refresh.
+     */
+    private void applyPreferenceCustomizations() {
+        // Handle layout changes for standard tiles
         for (int i = 0; i < CHANGE_LAYOUT_KEYS.length; i++) {
             Preference preference = findPreference(CHANGE_LAYOUT_KEYS[i]);
             if (preference != null){
                 preference.setLayoutResource(LAYOUTS_N[i]);
             }
         }
+        
+        // Handle layout and order changes for device-specific tiles
         for (int i = 0; i < CHANGE_LAYOUT_AND_ORDER_KEYS.length; i++) {
             Preference preference = findPreference(CHANGE_LAYOUT_AND_ORDER_KEYS[i]);
             if (preference != null){
                 preference.setLayoutResource(R.layout.clover_card_device);
                 preference.setOrder(12);
+            }
+        }
+        
+        // Handle backup tile specifically - set order to 9 and backup layout
+        for (int i = 0; i < BACKUP_TILE_KEYS.length; i++) {
+            Preference preference = findPreference(BACKUP_TILE_KEYS[i]);
+            if (preference != null){
+                preference.setLayoutResource(R.layout.clover_card_backup);
+                preference.setOrder(9); // This ensures it appears above top_level_system (order 10)
             }
         }
     }
@@ -382,7 +414,21 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
 
     @Override
     protected Preference createPreference(Tile tile) {
-        return new HomepagePreference(getPrefContext());
+        Preference preference = new HomepagePreference(getPrefContext());
+        
+        // Apply custom order and layout for backup preference when it's dynamically created
+        String tileKey = tile.getKey(getContext());
+        if (tileKey != null) {
+            for (String backupKey : BACKUP_TILE_KEYS) {
+                if (backupKey.equals("dashboard_tile_pref_" + tileKey)) {
+                    preference.setOrder(9);
+                    preference.setLayoutResource(R.layout.clover_card_backup);
+                    break;
+                }
+            }
+        }
+        
+        return preference;
     }
 
     void reloadHighlightMenuKey() {
